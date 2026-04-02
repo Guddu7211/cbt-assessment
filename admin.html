@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard – Assessment System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0c0f;--bg2:#13131a;--bg3:#1a1a24;--card:#16161f;
+  --border:rgba(139,92,246,0.18);--accent:#8b5cf6;--accent2:#ec4899;
+  --accent3:#06b6d4;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;
+  --text:#e2e8f0;--muted:#6b7280;--radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 10% 50%,rgba(139,92,246,0.06) 0%,transparent 50%),radial-gradient(ellipse at 90% 20%,rgba(236,72,153,0.04) 0%,transparent 50%);pointer-events:none}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100}
+.sidebar-brand{padding:20px;border-bottom:1px solid var(--border)}
+.sidebar-brand h1{font-size:1rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sidebar-brand p{font-size:0.7rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono'}
+.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;transition:.15s;font-size:0.84rem;color:var(--muted);border-left:3px solid transparent;user-select:none}
+.nav-item:hover{color:var(--text);background:rgba(139,92,246,0.06)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(139,92,246,0.1)}
+.nav-item .icon{width:20px;text-align:center;flex-shrink:0}
+.sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);font-size:0.74rem;color:var(--muted)}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--success);margin-right:5px}
+.status-dot.stopped{background:var(--danger)}
+.logout-btn{margin-top:8px;width:100%;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;border-radius:6px;padding:7px 10px;font-family:'Syne';font-size:0.78rem;font-weight:600;cursor:pointer;transition:.15s}
+.logout-btn:hover{background:rgba(239,68,68,0.18)}
+
+/* MAIN */
+.main{margin-left:220px;flex:1;padding:28px;overflow-y:auto;min-height:100vh;position:relative;z-index:1}
+.page{display:none}
+.page.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.page-header{margin-bottom:22px}
+.page-header h2{font-size:1.5rem;font-weight:800;letter-spacing:-0.5px}
+.page-header p{color:var(--muted);font-size:0.85rem;margin-top:4px}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;transition:.2s}
+.stat-card:hover{border-color:rgba(139,92,246,0.35)}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.stat-card .val{font-size:1.9rem;font-weight:800;font-family:'JetBrains Mono';background:linear-gradient(135deg,var(--text),var(--muted));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-card .label{font-size:0.73rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.8px}
+.stat-card .icon{position:absolute;right:14px;top:14px;font-size:1.5rem;opacity:0.2}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border:none;border-radius:7px;font-family:'Syne';font-size:0.84rem;font-weight:600;cursor:pointer;transition:.15s;text-decoration:none;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-primary:hover{opacity:0.88;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-success{background:var(--success);color:#fff}.btn-success:hover{opacity:0.88}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{opacity:0.88}
+.btn-warning{background:var(--warning);color:#000}.btn-warning:hover{opacity:0.88}
+.btn-sm{padding:6px 12px;font-size:0.8rem}
+.btn-xs{padding:3px 9px;font-size:0.74rem}
+
+/* FORM */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'Syne';font-size:0.86rem;transition:.2s}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(139,92,246,0.12)}
+.field textarea{resize:vertical;min-height:74px}
+.field select option{background:var(--bg3)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:0.84rem}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:0.71rem;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 14px;border-bottom:1px solid rgba(139,92,246,0.07);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(139,92,246,0.03)}
+.badge{padding:2px 9px;border-radius:20px;font-size:0.71rem;font-weight:700;font-family:'JetBrains Mono';display:inline-block}
+.badge-success{background:rgba(16,185,129,0.15);color:var(--success)}
+.badge-danger{background:rgba(239,68,68,0.15);color:var(--danger)}
+.badge-warning{background:rgba(245,158,11,0.15);color:var(--warning)}
+.badge-info{background:rgba(6,182,212,0.15);color:var(--accent3)}
+.badge-locked{background:rgba(239,68,68,0.1);color:var(--danger)}
+
+/* EXAM CONTROL */
+.exam-control{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:20px;flex-wrap:wrap}
+.exam-status-badge{padding:8px 18px;border-radius:30px;font-weight:800;font-family:'JetBrains Mono';font-size:0.9rem;letter-spacing:1px}
+.exam-status-badge.running{background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.35);animation:glow 2.5s infinite}
+.exam-status-badge.stopped{background:rgba(239,68,68,0.1);color:var(--danger);border:1px solid rgba(239,68,68,0.2)}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0.12)}}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);z-index:500;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:26px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;animation:mIn .2s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.97) translateY(5px)}to{opacity:1;transform:none}}
+.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:14px}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+
+/* ALERTS */
+.alert{padding:10px 14px;border-radius:7px;margin-bottom:12px;font-size:0.83rem;line-height:1.5}
+.alert-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.28);color:#fca5a5}
+.alert-success{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:#6ee7b7}
+.alert-info{background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);color:#c4b5fd}
+.alert-warning{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#fcd34d}
+
+/* ANALYTICS */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.top-list{list-style:none}
+.top-list li{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)}
+.top-list li:last-child{border-bottom:none}
+.top-rank{width:26px;height:26px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-family:'JetBrains Mono';font-weight:700;flex-shrink:0}
+.top-rank.gold{background:rgba(245,158,11,0.2);color:var(--warning)}
+.top-rank.silver{background:rgba(148,163,184,0.2);color:#94a3b8}
+.top-rank.bronze{background:rgba(180,120,80,0.2);color:#b87333}
+
+/* LIVE */
+.live-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;transition:.2s}
+.live-card:hover{border-color:rgba(139,92,246,0.3)}
+.live-dot{width:9px;height:9px;border-radius:50%;background:var(--success);animation:blink 1.5s infinite;flex-shrink:0}
+.live-dot.completed{background:var(--muted);animation:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* PASSWORD */
+.pwd-display{font-family:'JetBrains Mono';font-size:2.2rem;font-weight:700;letter-spacing:14px;text-align:center;color:var(--accent);background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px}
+
+/* LOGIN OVERLAY */
+#loginOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:200;padding:16px}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;max-width:400px;width:100%}
+.change-key-panel{display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px}
+
+/* MISC */
+.flex-gap{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ml-auto{margin-left:auto}
+.section-title{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:var(--muted);margin-bottom:12px}
+.empty-state{text-align:center;padding:36px 20px;color:var(--muted);font-size:0.86rem}
+.empty-state .icon{font-size:2rem;display:block;margin-bottom:8px}
+.q-preview{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+code{font-family:'JetBrains Mono';font-size:0.8rem;background:rgba(139,92,246,0.12);padding:2px 6px;border-radius:4px;color:var(--accent)}
+
+/* TOASTS */
+#toastArea{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:300px;pointer-events:none}
+.toast{padding:10px 16px;border-radius:8px;font-size:0.84rem;font-weight:600;font-family:'Syne';box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:tIn .22s ease}
+.toast.out{animation:tOut .22s ease forwards}
+.toast-success{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#6ee7b7}
+.toast-error{background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.35);color:#fca5a5}
+.toast-info{background:rgba(139,92,246,0.14);border:1px solid rgba(139,92,246,0.35);color:#c4b5fd}
+@keyframes tIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@keyframes tOut{to{opacity:0;transform:translateX(10px)}}
+
+@media(max-width:768px){
+  .sidebar{width:54px}
+  .sidebar .nav-item span,.sidebar-brand h1,.sidebar-brand p,.sidebar-footer .logout-btn,#sidebarStatus{display:none}
+  .nav-item{justify-content:center;padding:12px}
+  .main{margin-left:54px;padding:16px}
+  .form-grid,.analytics-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="toastArea"></div>
+
+<!-- ═══ LOGIN OVERLAY ════════════════════════════════════════════════════════ -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="font-size:2.2rem;margin-bottom:8px">🔐</div>
+      <h2 style="font-size:1.3rem;margin-bottom:4px">Admin Login</h2>
+      <p style="color:var(--muted);font-size:0.82rem">Employee Assessment Control Panel</p>
+    </div>
+    <div id="loginAlert"></div>
+    <div class="field">
+      <label>Admin Key</label>
+      <input type="password" id="adminKeyInput" placeholder="Default key: admin123"
+        autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <button class="btn btn-primary" id="loginBtn" style="width:100%;margin-bottom:10px" onclick="adminLogin()">
+      Access Dashboard →
+    </button>
+    <button class="btn btn-secondary" style="width:100%;font-size:0.8rem" onclick="toggleCKPanel()">
+      🔑 Change Admin Key
+    </button>
+    <div class="change-key-panel" id="ckPanel">
+      <p style="font-size:0.79rem;color:var(--muted);margin-bottom:12px;line-height:1.5">
+        Verify with your current key, then set a new one. Changes last until server restart — set <code>ADMIN_KEY</code> env var for permanence.
+      </p>
+      <div class="field"><label>Current Key</label><input type="password" id="ckCurrent" placeholder="Current admin key"></div>
+      <div class="field"><label>New Key (min 6 chars)</label><input type="password" id="ckNew" placeholder="New key"></div>
+      <div class="field"><label>Confirm New Key</label><input type="password" id="ckConfirm" placeholder="Repeat new key"></div>
+      <div id="ckAlert"></div>
+      <div class="flex-gap">
+        <button class="btn btn-secondary" style="flex:1" onclick="toggleCKPanel()">Cancel</button>
+        <button class="btn btn-primary" style="flex:1" onclick="doChangeKey('ckCurrent','ckNew','ckConfirm','ckAlert',false)">Update Key</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SIDEBAR ══════════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-brand"><h1>AssessAdmin</h1><p>Control Panel</p></div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="showPage('dashboard')">  <span class="icon">📊</span><span>Dashboard</span></div>
+    <div class="nav-item" onclick="showPage('examControl')"> <span class="icon">🎮</span><span>Exam Control</span></div>
+    <div class="nav-item" onclick="showPage('questions')">   <span class="icon">❓</span><span>Questions</span></div>
+    <div class="nav-item" onclick="showPage('candidates')">  <span class="icon">👥</span><span>Candidates</span></div>
+    <div class="nav-item" onclick="showPage('results')">     <span class="icon">📋</span><span>Results</span></div>
+    <div class="nav-item" onclick="showPage('live')">        <span class="icon">🔴</span><span>Live Monitor</span></div>
+    <div class="nav-item" onclick="showPage('analytics')">   <span class="icon">📈</span><span>Analytics</span></div>
+    <div class="nav-item" onclick="showPage('passwords')">   <span class="icon">🔑</span><span>Review Pwd</span></div>
+    <div class="nav-item" onclick="showPage('auditLogs')">   <span class="icon">📜</span><span>Audit Logs</span></div>
+    <div class="nav-item" onclick="showPage('settings')">    <span class="icon">⚙️</span><span>Settings</span></div>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center"><span class="status-dot stopped" id="sidebarDot"></span><span id="sidebarStatus">Loading…</span></div>
+    <button class="logout-btn" onclick="adminLogout()">⏏ Logout</button>
+  </div>
+</aside>
+
+<!-- ═══ MAIN CONTENT ═════════════════════════════════════════════════════════ -->
+<main class="main" id="mainContent" style="display:none">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header"><h2>Dashboard</h2><p>System overview</p></div>
+  <div class="cards-grid">
+    <div class="stat-card"><div class="icon">👥</div><div class="val" id="dc-cands">—</div><div class="label">Candidates</div></div>
+    <div class="stat-card"><div class="icon">❓</div><div class="val" id="dc-qns">—</div><div class="label">Questions</div></div>
+    <div class="stat-card"><div class="icon">✅</div><div class="val" id="dc-comp">—</div><div class="label">Completed</div></div>
+    <div class="stat-card"><div class="icon">⏳</div><div class="val" id="dc-prog">—</div><div class="label">In Progress</div></div>
+    <div class="stat-card"><div class="icon">📊</div><div class="val" id="dc-avg">—</div><div class="label">Avg Score</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="section-title">Quick Actions</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-success" onclick="toggleExam(true)">▶ Start Exam</button>
+        <button class="btn btn-danger"  onclick="toggleExam(false)">⏹ Stop Exam</button>
+        <button class="btn btn-secondary" onclick="showPage('live')">🔴 Live Monitor</button>
+        <a class="btn btn-secondary" id="dashExportBtn" target="_blank">⬇ Download Results</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">DB Health</div>
+      <div id="dbStatus" style="color:var(--muted);font-size:0.84rem">Checking…</div>
+    </div>
+  </div>
+</div>
+
+<!-- EXAM CONTROL -->
+<div class="page" id="page-examControl">
+  <div class="page-header"><h2>Exam Control</h2><p>Start / stop exam and configure settings</p></div>
+  <div class="exam-control">
+    <div>
+      <div style="font-size:0.71rem;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px">Status</div>
+      <div class="exam-status-badge stopped" id="examStatusBadge">● STOPPED</div>
+    </div>
+    <div style="flex:1"></div>
+    <button class="btn btn-success" onclick="toggleExam(true)">▶ Start</button>
+    <button class="btn btn-danger"  onclick="toggleExam(false)">⏹ Stop</button>
+  </div>
+  <div class="card">
+    <h3 style="font-size:1rem;margin-bottom:16px">Exam Settings</h3>
+    <div class="form-grid">
+      <div class="field"><label>Total Exam Time (seconds)</label><input type="number" id="totalTime" min="60"></div>
+      <div class="field"><label>Per-Question Time (0 = disabled)</label><input type="number" id="perQTime" min="0"></div>
+      <div class="field"><label>Max Questions per Candidate</label><input type="number" id="maxQ" min="1"></div>
+      <div class="field"><label>Tab Switch Limit (0 = unlimited)</label><input type="number" id="tabLimit" min="0"></div>
+      <div class="field"><label>Shuffle Questions</label>
+        <select id="shuffleQ"><option value="1">Yes — randomise order</option><option value="0">No — original order</option></select>
+      </div>
+      <div class="field"><label>Shuffle Answer Options</label>
+        <select id="shuffleO"><option value="1">Yes — randomise A/B/C/D</option><option value="0">No — original order</option></select>
+      </div>
+    </div>
+    <div id="settingsAlert"></div>
+    <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+  </div>
+</div>
+
+<!-- QUESTIONS -->
+<div class="page" id="page-questions">
+  <div class="page-header"><h2>Questions</h2><p>Manage the question bank</p></div>
+  <div class="flex-gap" style="margin-bottom:14px">
+    <button class="btn btn-primary" onclick="openAddQuestion()">+ Add</button>
+    <label class="btn btn-secondary" style="cursor:pointer">⬆ Import CSV/Excel<input type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="importQuestions(this)"></label>
+    <a class="btn btn-secondary" id="exportQBtn">⬇ Export</a>
+    <button class="btn btn-danger btn-sm" onclick="clearData('questions')">🗑 Clear All</button>
+    <span class="ml-auto" style="color:var(--muted);font-size:0.82rem" id="qCountLabel"></span>
+  </div>
+  <div id="questionsAlert"></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Question</th><th>Ans</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="questionsTable"><tr><td colspan="6"><div class="empty-state"><span class="icon">❓</span>No questions yet.</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CANDIDATES -->
+<div class="page" id="page-candidates">
+  <div class="page-header"><h2>Candidates</h2><p>Manage registered employees</p></div>
+  <div class="flex-gap" style="margin-bottom:14px">
+    <button class="btn btn-primary" onclick="openAddCandidate()">+ Add</button>
+    <label class="btn btn-secondary" style="cursor:pointer">⬆ Import CSV/Excel<input type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="importCandidates(this)"></label>
+    <a class="btn btn-secondary" id="exportCBtn">⬇ Export</a>
+    <button class="btn btn-danger btn-sm" onclick="clearData('candidates')">🗑 Clear All</button>
+  </div>
+  <div id="candidatesAlert"></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Name</th><th>Emp ID</th><th>Email</th><th>Actions</th></tr></thead>
+      <tbody id="candidatesTable"><tr><td colspan="5"><div class="empty-state"><span class="icon">👥</span>No candidates yet.</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="page" id="page-results">
+  <div class="page-header"><h2>Results</h2><p>All candidate exam results</p></div>
+  <div class="flex-gap" style="margin-bottom:14px">
+    <a class="btn btn-secondary" id="exportRBtn">⬇ Export Excel</a>
+    <button class="btn btn-danger btn-sm" onclick="clearData('results')">🗑 Clear</button>
+    <input type="text" id="resultSearch" placeholder="🔍 Search name / emp ID…" style="margin-left:auto;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:7px 12px;color:var(--text);font-family:'Syne';font-size:0.83rem;width:230px" oninput="filterResults()">
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Name</th><th>Emp ID</th><th>Score</th><th>%</th><th>Time</th><th>Status</th><th>Tabs</th><th>Actions</th></tr></thead>
+      <tbody id="resultsTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- LIVE MONITOR -->
+<div class="page" id="page-live">
+  <div class="page-header"><h2>Live Monitor</h2><p>Real-time exam activity</p></div>
+  <div class="flex-gap" style="margin-bottom:16px">
+    <button class="btn btn-secondary" onclick="loadLive()">🔄 Refresh</button>
+    <label style="display:flex;align-items:center;gap:7px;font-size:0.83rem;color:var(--muted);cursor:pointer">
+      <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()"> Auto every 10s
+    </label>
+    <span class="ml-auto" style="font-size:0.78rem;color:var(--muted)" id="liveAt"></span>
+  </div>
+  <div id="liveList"></div>
+</div>
+
+<!-- ANALYTICS -->
+<div class="page" id="page-analytics">
+  <div class="page-header"><h2>Analytics</h2><p>Performance insights</p></div>
+  <div class="cards-grid" id="analyticsCards"></div>
+  <div class="analytics-grid">
+    <div class="card">
+      <div class="section-title">🏆 Top Performers</div>
+      <ul class="top-list" id="topList"><li style="color:var(--muted);font-size:0.83rem;padding:10px 0">No results yet.</li></ul>
+    </div>
+    <div class="card">
+      <div class="section-title">📊 Score Distribution</div>
+      <div id="scoreDistrib" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- REVIEW PASSWORDS -->
+<div class="page" id="page-passwords">
+  <div class="page-header"><h2>Review Passwords</h2><p>Generate 6-digit passwords for answer review</p></div>
+  <div class="card" style="max-width:400px;margin-bottom:20px">
+    <h3 style="font-size:1rem;margin-bottom:14px">Generate New Password</h3>
+    <div class="field"><label>Valid For (hours, 0 = no expiry)</label><input type="number" id="pwdHours" min="0" value="24"></div>
+    <button class="btn btn-primary" onclick="generatePassword()">🔐 Generate</button>
+    <div id="pwdResult"></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Password</th><th>Created</th><th>Valid Until</th><th>Status</th></tr></thead>
+      <tbody id="pwdTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- AUDIT LOGS -->
+<div class="page" id="page-auditLogs">
+  <div class="page-header"><h2>Audit Logs</h2><p>Latest 500 system and admin actions</p></div>
+  <div class="flex-gap" style="margin-bottom:14px">
+    <input type="text" id="auditSearch" placeholder="🔍 Filter…" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:7px 12px;color:var(--text);font-family:'Syne';font-size:0.83rem;width:260px" oninput="filterAudit()">
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Time</th><th>Action</th><th>Admin</th><th>Target</th><th>Details</th></tr></thead>
+      <tbody id="auditTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="page-header"><h2>Settings</h2><p>Advanced configuration and data management</p></div>
+  <div style="display:grid;gap:16px;max-width:620px">
+
+    <div class="card">
+      <h3 style="font-size:1rem;margin-bottom:6px">🔑 Change Admin Key</h3>
+      <p style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;line-height:1.5">Update while logged in. Set <code>ADMIN_KEY</code> env var to persist across server restarts.</p>
+      <div class="form-grid">
+        <div class="field"><label>Current Key</label><input type="password" id="sCurrent" placeholder="Current key"></div>
+        <div class="field"><label>New Key (min 6 chars)</label><input type="password" id="sNew" placeholder="New key"></div>
+      </div>
+      <div class="field"><label>Confirm New Key</label><input type="password" id="sConfirm" placeholder="Repeat new key" style="max-width:290px"></div>
+      <div id="sKeyAlert"></div>
+      <button class="btn btn-primary" onclick="doChangeKey('sCurrent','sNew','sConfirm','sKeyAlert',true)">Update Admin Key</button>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:1rem;margin-bottom:14px">🗑 Data Management</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn btn-danger" onclick="clearData('questions')">Clear Questions</button>
+        <button class="btn btn-danger" onclick="clearData('candidates')">Clear Candidates</button>
+        <button class="btn btn-danger" onclick="clearData('results')">Clear Results</button>
+        <button class="btn btn-danger" style="grid-column:1/-1" onclick="clearData('all')">⚠️ Clear ALL Data</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:1rem;margin-bottom:14px">📄 Import Templates</h3>
+      <div class="flex-gap">
+        <button class="btn btn-secondary" onclick="downloadTemplate('questions')">⬇ Questions CSV</button>
+        <button class="btn btn-secondary" onclick="downloadTemplate('candidates')">⬇ Candidates CSV</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:1rem;margin-bottom:12px">ℹ️ System Info</h3>
+      <div id="sysInfo" style="font-size:0.82rem;color:var(--muted);display:grid;gap:5px">Loading…</div>
+    </div>
+
+  </div>
+</div>
+
+</main>
+
+<!-- ═══ MODALS ════════════════════════════════════════════════════════════════ -->
+
+<!-- Question Modal -->
+<div class="modal-overlay" id="qModal">
+  <div class="modal">
+    <h3 id="qModalTitle">Add Question</h3>
+    <input type="hidden" id="qEditId">
+    <div class="field"><label>Question *</label><textarea id="qQuestion" rows="3" placeholder="Enter the question text…"></textarea></div>
+    <div class="form-grid">
+      <div class="field"><label>Option A *</label><input type="text" id="qOptA"></div>
+      <div class="field"><label>Option B *</label><input type="text" id="qOptB"></div>
+      <div class="field"><label>Option C</label><input type="text" id="qOptC"></div>
+      <div class="field"><label>Option D</label><input type="text" id="qOptD"></div>
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Correct Answer *</label>
+        <select id="qAnswer"><option value="">— Select —</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+      </div>
+      <div class="field"><label>Time Limit sec (0 = global)</label><input type="number" id="qTime" value="0" min="0"></div>
+    </div>
+    <div class="field"><label>Explanation</label><textarea id="qExpl" rows="2" placeholder="Explain why the answer is correct…"></textarea></div>
+    <div class="field"><label>Lock Status</label>
+      <select id="qLocked"><option value="0">Active — included in exams</option><option value="1">Locked — excluded from exams</option></select>
+    </div>
+    <div id="qModalAlert"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('qModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveQuestion()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Candidate Modal -->
+<div class="modal-overlay" id="cModal">
+  <div class="modal">
+    <h3>Add Candidate</h3>
+    <div class="field"><label>Full Name *</label><input type="text" id="cName" placeholder="Employee full name"></div>
+    <div class="field"><label>Employee ID *</label><input type="text" id="cEmpId" placeholder="e.g. EMP001"></div>
+    <div class="field"><label>Email *</label><input type="email" id="cEmail" placeholder="employee@company.com"></div>
+    <div id="cModalAlert"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('cModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCandidate()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Extend Time Modal -->
+<div class="modal-overlay" id="extModal">
+  <div class="modal">
+    <h3>⏱ Adjust Candidate Time</h3>
+    <p style="color:var(--muted);font-size:0.84rem;margin-bottom:14px;line-height:1.5">Positive = add time · Negative = reduce time. Applied to remaining time immediately.</p>
+    <input type="hidden" id="extResultId">
+    <div class="field"><label>Seconds (e.g. 300 or -60)</label><input type="number" id="extSeconds" placeholder="300"></div>
+    <div id="extAlert"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('extModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doExtendTime()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCRIPT ════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+const KEY_STORE = 'cbt_adminKey';
+let adminKey = localStorage.getItem(KEY_STORE) || '';
+let allResults = [], allLogs = [], liveTimer = null;
+
+/* ── TOAST ─────────────────────────────────────────────────────────────────── */
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toastArea').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 240); }, 3000);
+}
+
+/* ── ALERT HELPER ───────────────────────────────────────────────────────────── */
+function setAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = msg ? `<div class="alert alert-${type}">${msg}</div>` : '';
+}
+
+/* ── HTML ESCAPE ─────────────────────────────────────────────────────────────── */
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── AUTH ───────────────────────────────────────────────────────────────────── */
+async function adminLogin() {
+  const key = document.getElementById('adminKeyInput').value.trim();
+  if (!key) { setAlert('loginAlert','Please enter the admin key.','error'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.textContent = 'Verifying…'; btn.disabled = true;
+  try {
+    const res = await fetch('/api/admin/settings', { headers: { 'x-admin-key': key } });
+    if (!res.ok) {
+      setAlert('loginAlert', '❌ Invalid key. Default is <strong>admin123</strong> — or check the <code>ADMIN_KEY</code> env var in server.js.', 'error');
+      btn.textContent = 'Access Dashboard →'; btn.disabled = false;
+      return;
+    }
+    adminKey = key;
+    localStorage.setItem(KEY_STORE, key);
+    enterDashboard();
+  } catch (e) {
+    setAlert('loginAlert', '⚠️ Cannot reach server. Make sure <strong>server.js</strong> is running on port 3000.', 'error');
+    btn.textContent = 'Access Dashboard →'; btn.disabled = false;
+  }
+}
+
+function enterDashboard() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('loginBtn').textContent = 'Access Dashboard →';
+  document.getElementById('loginBtn').disabled = false;
+  updateExportLinks();
+  loadDashboard();
+  loadSettings();
+}
+
+function adminLogout() {
+  localStorage.removeItem(KEY_STORE); adminKey = '';
+  clearInterval(liveTimer);
+  document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('adminKeyInput').value = '';
+  setAlert('loginAlert', 'You have been logged out.', 'info');
+}
+
+function toggleCKPanel() {
+  const p = document.getElementById('ckPanel');
+  p.style.display = p.style.display === 'block' ? 'none' : 'block';
+}
+
+async function doChangeKey(cId, nId, cfId, alertId, stayLoggedIn) {
+  const current = document.getElementById(cId).value.trim();
+  const newKey  = document.getElementById(nId).value.trim();
+  const confirm = document.getElementById(cfId).value.trim();
+  if (!current||!newKey||!confirm) { setAlert(alertId,'All fields required.','error'); return; }
+  if (newKey.length < 6)           { setAlert(alertId,'New key must be ≥6 characters.','error'); return; }
+  if (newKey !== confirm)          { setAlert(alertId,'New keys do not match.','error'); return; }
+  try {
+    const res = await fetch('/api/admin/change-key', {
+      method:'POST', headers:{'Content-Type':'application/json','x-admin-key':current},
+      body: JSON.stringify({newKey})
+    });
+    const d = await res.json();
+    if (!res.ok) { setAlert(alertId, d.error||'Failed — check current key.','error'); return; }
+    if (stayLoggedIn) {
+      adminKey = newKey; localStorage.setItem(KEY_STORE, newKey); updateExportLinks();
+      setAlert(alertId,'✅ Key updated. Session continues with new key.','success');
+      [cId,nId,cfId].forEach(id => document.getElementById(id).value='');
+      setTimeout(()=>setAlert(alertId,'',''),5000);
+      toast('Admin key updated');
+    } else {
+      setAlert(alertId,'✅ Key updated! Log in with your new key.','success');
+      localStorage.removeItem(KEY_STORE); adminKey='';
+      setTimeout(()=>{
+        document.getElementById('ckPanel').style.display='none';
+        [cId,nId,cfId].forEach(id => document.getElementById(id).value='');
+        setAlert(alertId,'',''); setAlert('loginAlert','Key changed — log in with new key.','success');
+      },1800);
+    }
+  } catch(e) { setAlert(alertId,'Server error.','error'); }
+}
+
+/* ── API ────────────────────────────────────────────────────────────────────── */
+async function api(path, opts={}) {
+  const h = {'Content-Type':'application/json','x-admin-key':adminKey};
+  if (opts.headers) Object.assign(h, opts.headers);
+  const res = await fetch(path, {...opts, headers:h});
+  if (res.status===401) { adminLogout(); throw new Error('Unauthorised'); }
+  return res;
+}
+
+/* ── PAGE NAV ───────────────────────────────────────────────────────────────── */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')?.includes(`'${id}'`))n.classList.add('active');});
+  ({dashboard:loadDashboard,examControl:loadSettings,questions:loadQuestions,candidates:loadCandidates,results:loadResults,live:loadLive,analytics:loadAnalytics,passwords:loadPasswords,auditLogs:loadAuditLogs,settings:loadSysInfo})[id]?.();
+}
+
+/* ── DASHBOARD ──────────────────────────────────────────────────────────────── */
+async function loadDashboard() {
+  try {
+    const [a,db] = await Promise.all([api('/api/admin/analytics').then(r=>r.json()), api('/api/admin/db-status').then(r=>r.json())]);
+    document.getElementById('dc-cands').textContent = a.totalCandidates;
+    document.getElementById('dc-qns').textContent   = a.totalQuestions;
+    document.getElementById('dc-comp').textContent  = a.completed;
+    document.getElementById('dc-prog').textContent  = a.inProgress;
+    document.getElementById('dc-avg').textContent   = parseFloat(a.avgScore||0).toFixed(1)+'%';
+    const live = a.examStatus==='started';
+    document.getElementById('sidebarDot').className  = 'status-dot'+(live?'':' stopped');
+    document.getElementById('sidebarStatus').textContent = live?'EXAM LIVE':'Stopped';
+    document.getElementById('dbStatus').innerHTML = `
+      <span class="badge badge-${db.status==='healthy'?'success':'danger'}" style="margin-bottom:8px">● ${db.status}</span>
+      <div style="font-size:0.8rem;color:var(--muted);display:grid;gap:3px;margin-top:6px">
+        <div>Questions: <strong style="color:var(--text)">${db.questions}</strong></div>
+        <div>Candidates: <strong style="color:var(--text)">${db.candidates}</strong></div>
+        <div>Results: <strong style="color:var(--text)">${db.results}</strong></div>
+      </div>`;
+  } catch(e){}
+}
+
+/* ── SETTINGS ───────────────────────────────────────────────────────────────── */
+async function loadSettings() {
+  try {
+    const s = await api('/api/admin/settings').then(r=>r.json());
+    document.getElementById('totalTime').value = s.totalTime||3600;
+    document.getElementById('perQTime').value  = s.perQuestionTime||0;
+    document.getElementById('maxQ').value      = s.maxQuestionsPerCandidate||40;
+    document.getElementById('tabLimit').value  = s.tabSwitchLimit||3;
+    document.getElementById('shuffleQ').value  = s.shuffleQuestions?'1':'0';
+    document.getElementById('shuffleO').value  = s.shuffleOptions?'1':'0';
+    const live = s.examStatus==='started';
+    const b = document.getElementById('examStatusBadge');
+    b.className='exam-status-badge '+(live?'running':'stopped');
+    b.textContent = live?'● RUNNING':'● STOPPED';
+  } catch(e){}
+}
+
+async function saveSettings() {
+  const body={
+    totalTime:parseInt(document.getElementById('totalTime').value),
+    perQuestionTime:parseInt(document.getElementById('perQTime').value),
+    maxQuestionsPerCandidate:parseInt(document.getElementById('maxQ').value),
+    tabSwitchLimit:parseInt(document.getElementById('tabLimit').value),
+    shuffleQuestions:document.getElementById('shuffleQ').value==='1',
+    shuffleOptions:document.getElementById('shuffleO').value==='1',
+    examStatus:document.getElementById('examStatusBadge').classList.contains('running')?'started':'stopped',
+  };
+  try {
+    await api('/api/admin/settings',{method:'POST',body:JSON.stringify(body)});
+    setAlert('settingsAlert','✅ Settings saved!','success');
+    setTimeout(()=>setAlert('settingsAlert','',''),3000);
+    toast('Settings saved');
+  } catch(e){ setAlert('settingsAlert','❌ Save failed.','error'); }
+}
+
+async function toggleExam(start) {
+  try {
+    await api('/api/admin/exam-control',{method:'POST',body:JSON.stringify({action:start?'start':'stop'})});
+    await loadSettings(); await loadDashboard();
+    toast(start?'▶ Exam is LIVE':'⏹ Exam stopped', start?'success':'info');
+  } catch(e){ toast('Failed to update exam status','error'); }
+}
+
+/* ── QUESTIONS ──────────────────────────────────────────────────────────────── */
+async function loadQuestions() {
+  try {
+    const qs = await api('/api/admin/questions').then(r=>r.json());
+    document.getElementById('qCountLabel').textContent = `${qs.length} question${qs.length!==1?'s':''}`;
+    const tb = document.getElementById('questionsTable');
+    if (!qs.length){ tb.innerHTML=`<tr><td colspan="6"><div class="empty-state"><span class="icon">❓</span>No questions yet.</div></td></tr>`; return; }
+    tb.innerHTML='';
+    qs.forEach(q=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td style="font-family:'JetBrains Mono';color:var(--muted);font-size:0.77rem">${q.id}</td>
+        <td><span class="q-preview" title="${esc(q.question)}">${esc(q.question)}</span></td>
+        <td><span class="badge badge-info">${q.answer}</span></td>
+        <td style="font-family:'JetBrains Mono';font-size:0.79rem">${q.timeLimit>0?q.timeLimit+'s':'—'}</td>
+        <td>${q.locked?'<span class="badge badge-locked">🔒 Locked</span>':'<span class="badge badge-success">Active</span>'}</td>
+        <td><div class="flex-gap">
+          <button class="btn btn-secondary btn-xs" onclick="editQuestion(${q.id})">Edit</button>
+          <button class="btn btn-warning btn-xs" onclick="toggleLock(${q.id},${q.locked?0:1})">${q.locked?'Unlock':'Lock'}</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteQuestion(${q.id})">Del</button>
+        </div></td>`;
+      tb.appendChild(tr);
+    });
+  } catch(e){}
+}
+
+function openAddQuestion(){
+  document.getElementById('qEditId').value='';
+  document.getElementById('qModalTitle').textContent='Add Question';
+  ['qQuestion','qOptA','qOptB','qOptC','qOptD','qExpl'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('qAnswer').value='';
+  document.getElementById('qTime').value='0';
+  document.getElementById('qLocked').value='0';
+  setAlert('qModalAlert','','');
+  document.getElementById('qModal').classList.add('open');
+}
+
+async function editQuestion(id){
+  try{
+    const qs=await api('/api/admin/questions').then(r=>r.json());
+    const q=qs.find(x=>x.id===id); if(!q)return;
+    document.getElementById('qEditId').value=q.id;
+    document.getElementById('qModalTitle').textContent='Edit Question';
+    document.getElementById('qQuestion').value=q.question;
+    document.getElementById('qOptA').value=q.optionA||'';
+    document.getElementById('qOptB').value=q.optionB||'';
+    document.getElementById('qOptC').value=q.optionC||'';
+    document.getElementById('qOptD').value=q.optionD||'';
+    document.getElementById('qAnswer').value=q.answer;
+    document.getElementById('qTime').value=q.timeLimit||0;
+    document.getElementById('qExpl').value=q.explanation||'';
+    document.getElementById('qLocked').value=q.locked?'1':'0';
+    setAlert('qModalAlert','','');
+    document.getElementById('qModal').classList.add('open');
+  }catch(e){}
+}
+
+async function saveQuestion(){
+  const body={
+    question:document.getElementById('qQuestion').value.trim(),
+    optionA:document.getElementById('qOptA').value.trim(),
+    optionB:document.getElementById('qOptB').value.trim(),
+    optionC:document.getElementById('qOptC').value.trim(),
+    optionD:document.getElementById('qOptD').value.trim(),
+    answer:document.getElementById('qAnswer').value,
+    explanation:document.getElementById('qExpl').value.trim(),
+    timeLimit:parseInt(document.getElementById('qTime').value)||0,
+    locked:document.getElementById('qLocked').value==='1',
+  };
+  if(!body.question||!body.optionA||!body.optionB||!body.answer){
+    setAlert('qModalAlert','Question, Options A & B, and Answer are required.','error'); return;
+  }
+  try{
+    const id=document.getElementById('qEditId').value;
+    const res=await api(id?`/api/admin/questions/${id}`:'/api/admin/questions',{method:id?'PUT':'POST',body:JSON.stringify(body)});
+    if(!res.ok){const d=await res.json();setAlert('qModalAlert',d.error||'Save failed.','error');return;}
+    closeModal('qModal'); toast(id?'Question updated':'Question added'); loadQuestions();
+  }catch(e){setAlert('qModalAlert','Server error.','error');}
+}
+
+async function deleteQuestion(id){
+  if(!confirm('Delete this question?'))return;
+  await api(`/api/admin/questions/${id}`,{method:'DELETE'});
+  toast('Question deleted','info'); loadQuestions();
+}
+
+async function toggleLock(id,locked){
+  await api(`/api/admin/questions/${id}/lock`,{method:'POST',body:JSON.stringify({locked:!!locked})});
+  toast(locked?'🔒 Locked':'🔓 Unlocked','info'); loadQuestions();
+}
+
+async function importQuestions(input){
+  const file=input.files[0]; if(!file)return;
+  const fd=new FormData(); fd.append('file',file);
+  try{
+    const res=await fetch('/api/admin/import-questions',{method:'POST',headers:{'x-admin-key':adminKey},body:fd});
+    const d=await res.json();
+    if(!res.ok){toast('Import failed: '+(d.error||'unknown'),'error');return;}
+    setAlert('questionsAlert',`✅ Imported ${d.count} questions!`,'success');
+    setTimeout(()=>setAlert('questionsAlert','',''),4000);
+    toast(`Imported ${d.count} questions`); loadQuestions();
+  }catch(e){toast('Import failed — check file format','error');}
+  input.value='';
+}
+
+/* ── CANDIDATES ─────────────────────────────────────────────────────────────── */
+async function loadCandidates(){
+  try{
+    const cs=await api('/api/admin/candidates').then(r=>r.json());
+    const tb=document.getElementById('candidatesTable');
+    if(!cs.length){tb.innerHTML=`<tr><td colspan="5"><div class="empty-state"><span class="icon">👥</span>No candidates yet.</div></td></tr>`;return;}
+    tb.innerHTML='';
+    cs.forEach(c=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td style="font-family:'JetBrains Mono';color:var(--muted);font-size:0.77rem">${c.id}</td>
+        <td>${esc(c.name)}</td>
+        <td style="font-family:'JetBrains Mono';font-size:0.82rem">${esc(c.empId)}</td>
+        <td style="font-size:0.82rem">${esc(c.email)}</td>
+        <td><div class="flex-gap">
+          <button class="btn btn-warning btn-xs" onclick="resetCandidate('${esc(c.empId)}')">↺ Reset</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteCandidate(${c.id})">Del</button>
+        </div></td>`;
+      tb.appendChild(tr);
+    });
+  }catch(e){}
+}
+
+function openAddCandidate(){
+  ['cName','cEmpId','cEmail'].forEach(id=>document.getElementById(id).value='');
+  setAlert('cModalAlert','','');
+  document.getElementById('cModal').classList.add('open');
+}
+
+async function saveCandidate(){
+  const body={name:document.getElementById('cName').value.trim(),empId:document.getElementById('cEmpId').value.trim(),email:document.getElementById('cEmail').value.trim()};
+  if(!body.name||!body.empId||!body.email){setAlert('cModalAlert','All fields required.','error');return;}
+  try{
+    const res=await api('/api/admin/candidates',{method:'POST',body:JSON.stringify(body)});
+    const d=await res.json();
+    if(!res.ok){setAlert('cModalAlert',d.error||'Failed — Emp ID or Email may already exist.','error');return;}
+    closeModal('cModal'); toast('Candidate added'); loadCandidates();
+  }catch(e){setAlert('cModalAlert','Server error.','error');}
+}
+
+async function deleteCandidate(id){
+  if(!confirm('Delete this candidate?'))return;
+  await api(`/api/admin/candidates/${id}`,{method:'DELETE'});
+  toast('Candidate deleted','info'); loadCandidates();
+}
+
+async function resetCandidate(empId){
+  if(!confirm(`Reset exam attempt for ${empId}?\nThey will be able to retake the exam.`))return;
+  await api('/api/admin/reset-candidate',{method:'POST',body:JSON.stringify({empId})});
+  toast(`Attempt reset for ${empId}`,'info'); loadCandidates(); loadResults();
+}
+
+async function importCandidates(input){
+  const file=input.files[0]; if(!file)return;
+  const fd=new FormData(); fd.append('file',file);
+  try{
+    const res=await fetch('/api/admin/import-candidates',{method:'POST',headers:{'x-admin-key':adminKey},body:fd});
+    const d=await res.json();
+    if(!res.ok){toast('Import failed: '+(d.error||'unknown'),'error');return;}
+    setAlert('candidatesAlert',`✅ Imported ${d.count} candidates!`,'success');
+    setTimeout(()=>setAlert('candidatesAlert','',''),4000);
+    toast(`Imported ${d.count} candidates`); loadCandidates();
+  }catch(e){toast('Import failed','error');}
+  input.value='';
+}
+
+/* ── RESULTS ────────────────────────────────────────────────────────────────── */
+async function loadResults(){
+  try{ allResults=await api('/api/admin/results').then(r=>r.json()); renderResults(allResults); }catch(e){}
+}
+
+function filterResults(){
+  const q=document.getElementById('resultSearch').value.toLowerCase();
+  renderResults(allResults.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.empId||'').toLowerCase().includes(q)));
+}
+
+function renderResults(rows){
+  const tb=document.getElementById('resultsTable');
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty-state"><span class="icon">📋</span>No results found.</div></td></tr>`;return;}
+  tb.innerHTML='';
+  rows.forEach(r=>{
+    const done=r.status==='completed';
+    const pct=parseFloat(r.percentage||0).toFixed(1);
+    const pc=pct>=75?'var(--success)':pct>=50?'var(--warning)':'var(--danger)';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="font-family:'JetBrains Mono';color:var(--muted);font-size:0.77rem">${r.id}</td>
+      <td>${esc(r.name||'')}</td>
+      <td style="font-family:'JetBrains Mono';font-size:0.81rem">${esc(r.empId||'')}</td>
+      <td style="font-family:'JetBrains Mono'">${r.score||0}</td>
+      <td style="font-family:'JetBrains Mono';color:${pc};font-weight:700">${pct}%</td>
+      <td style="font-size:0.79rem;color:var(--muted)">${fmtTime(r.timeTaken||0)}</td>
+      <td><span class="badge ${done?'badge-success':'badge-warning'}">${done?'Done':'Active'}</span></td>
+      <td style="font-family:'JetBrains Mono';font-size:0.8rem;${(r.tabSwitches||0)>0?'color:var(--warning)':''}">${r.tabSwitches||0}</td>
+      <td><div class="flex-gap">
+        ${!done?`<button class="btn btn-danger btn-xs" onclick="forceSubmit(${r.id})">⏏</button>`:''}
+        <button class="btn btn-warning btn-xs" onclick="openExtend(${r.id})">⏱</button>
+        <button class="btn btn-secondary btn-xs" onclick="resetCandidate('${esc(r.empId)}')">↺</button>
+      </div></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+async function forceSubmit(id){
+  if(!confirm('Force-submit this candidate? Their current answers will be scored.'))return;
+  const res=await api('/api/admin/force-submit',{method:'POST',body:JSON.stringify({resultId:id})});
+  const d=await res.json();
+  toast(`Submitted — ${d.score} correct (${d.percentage}%)`,'info');
+  loadResults(); loadLive();
+}
+
+function openExtend(id){
+  document.getElementById('extResultId').value=id;
+  document.getElementById('extSeconds').value='';
+  setAlert('extAlert','','');
+  document.getElementById('extModal').classList.add('open');
+}
+
+async function doExtendTime(){
+  const id=document.getElementById('extResultId').value;
+  const sec=parseInt(document.getElementById('extSeconds').value);
+  if(!sec){setAlert('extAlert','Enter a non-zero number.','error');return;}
+  try{
+    const res=await api('/api/admin/extend-time',{method:'POST',body:JSON.stringify({resultId:id,seconds:sec})});
+    if(!res.ok){const d=await res.json();setAlert('extAlert',d.error,'error');return;}
+    closeModal('extModal');
+    toast(sec>0?`+${sec}s added`:`${Math.abs(sec)}s removed`,'info');
+    loadResults();
+  }catch(e){setAlert('extAlert','Server error.','error');}
+}
+
+/* ── LIVE ───────────────────────────────────────────────────────────────────── */
+async function loadLive(){
+  try{
+    const live=await api('/api/admin/live').then(r=>r.json());
+    document.getElementById('liveAt').textContent='Updated: '+new Date().toLocaleTimeString();
+    const list=document.getElementById('liveList');
+    if(!live.length){list.innerHTML=`<div class="empty-state"><span class="icon">🔴</span>No exam activity yet.</div>`;return;}
+    list.innerHTML='';
+    live.forEach(c=>{
+      const done=c.status==='completed';
+      const div=document.createElement('div');
+      div.className='live-card';
+      div.innerHTML=`
+        <div class="live-dot ${done?'completed':''}"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:0.88rem">${esc(c.name)} <span style="font-size:0.75rem;color:var(--muted);font-family:'JetBrains Mono'">${esc(c.empId)}</span></div>
+          <div style="font-size:0.77rem;color:var(--muted);margin-top:2px">
+            Q${c.currentQuestion}/${c.totalQuestions||'?'}
+            · Left: <strong style="color:var(--text)">${fmtTime(c.timeRemainingTotal||0)}</strong>
+            · Tabs: <strong style="${(c.tabSwitches||0)>0?'color:var(--warning)':''}">${c.tabSwitches||0}</strong>
+          </div>
+        </div>
+        <span class="badge ${done?'badge-success':'badge-warning'}">${c.status}</span>
+        ${!done?`<button class="btn btn-danger btn-xs" onclick="forceSubmit(${c.id})">Submit</button>`:''}
+        <button class="btn btn-warning btn-xs" onclick="openExtend(${c.id})">⏱</button>`;
+      list.appendChild(div);
+    });
+  }catch(e){}
+}
+
+function toggleAutoRefresh(){
+  clearInterval(liveTimer);
+  if(document.getElementById('autoRefresh').checked) liveTimer=setInterval(loadLive,10000);
+}
+
+/* ── ANALYTICS ──────────────────────────────────────────────────────────────── */
+async function loadAnalytics(){
+  try{
+    const [data,results]=await Promise.all([api('/api/admin/analytics').then(r=>r.json()),api('/api/admin/results').then(r=>r.json())]);
+    document.getElementById('analyticsCards').innerHTML=`
+      <div class="stat-card"><div class="icon">👥</div><div class="val">${data.totalCandidates}</div><div class="label">Candidates</div></div>
+      <div class="stat-card"><div class="icon">✅</div><div class="val">${data.completed}</div><div class="label">Completed</div></div>
+      <div class="stat-card"><div class="icon">⏳</div><div class="val">${data.inProgress}</div><div class="label">In Progress</div></div>
+      <div class="stat-card"><div class="icon">📊</div><div class="val">${parseFloat(data.avgScore||0).toFixed(1)}%</div><div class="label">Avg Score</div></div>`;
+    const tl=document.getElementById('topList');
+    tl.innerHTML='';
+    if(!data.topPerformers.length){ tl.innerHTML='<li style="color:var(--muted);font-size:0.82rem;padding:10px 0">No completed results yet.</li>'; }
+    else data.topPerformers.forEach((p,i)=>{
+      const cl=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+      const li=document.createElement('li');
+      li.innerHTML=`<div class="top-rank ${cl}">${i+1}</div><div style="flex:1"><div style="font-weight:700;font-size:0.86rem">${esc(p.name)}</div><div style="font-size:0.72rem;color:var(--muted)">${esc(p.empId)}</div></div><div style="font-family:'JetBrains Mono';font-weight:700;color:var(--accent)">${parseFloat(p.percentage).toFixed(1)}%</div>`;
+      tl.appendChild(li);
+    });
+    const completed=results.filter(r=>r.status==='completed');
+    const ranges=[{l:'90–100%',mn:90,mx:101,c:'var(--success)'},{l:'75–89%',mn:75,mx:90,c:'var(--accent)'},{l:'60–74%',mn:60,mx:75,c:'var(--accent2)'},{l:'40–59%',mn:40,mx:60,c:'var(--warning)'},{l:'0–39%',mn:0,mx:40,c:'var(--danger)'}];
+    const sd=document.getElementById('scoreDistrib'); sd.innerHTML='';
+    ranges.forEach(rg=>{
+      const cnt=completed.filter(r=>parseFloat(r.percentage)>=rg.mn&&parseFloat(r.percentage)<rg.mx).length;
+      const pct=completed.length>0?((cnt/completed.length)*100).toFixed(0):0;
+      const d=document.createElement('div');
+      d.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:0.77rem;margin-bottom:3px"><span>${rg.l}</span><span style="font-family:'JetBrains Mono';color:var(--muted)">${cnt}</span></div><div style="background:var(--bg3);border-radius:4px;height:6px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${rg.c};border-radius:4px;transition:.5s"></div></div>`;
+      sd.appendChild(d);
+    });
+  }catch(e){}
+}
+
+/* ── PASSWORDS ──────────────────────────────────────────────────────────────── */
+async function loadPasswords(){
+  try{
+    const pws=await api('/api/admin/review-passwords').then(r=>r.json());
+    const tb=document.getElementById('pwdTable');
+    if(!pws.length){tb.innerHTML=`<tr><td colspan="4"><div class="empty-state">No passwords yet.</div></td></tr>`;return;}
+    tb.innerHTML='';
+    pws.forEach(p=>{
+      const valid=!p.validUntil||new Date(p.validUntil)>new Date();
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td style="font-family:'JetBrains Mono';font-size:1.3rem;font-weight:700;letter-spacing:8px;color:var(--accent)">${p.password}</td>
+        <td style="font-size:0.79rem;color:var(--muted)">${new Date(p.createdAt).toLocaleString()}</td>
+        <td style="font-size:0.79rem;color:var(--muted)">${p.validUntil?new Date(p.validUntil).toLocaleString():'∞ No expiry'}</td>
+        <td><span class="badge ${valid?'badge-success':'badge-danger'}">${valid?'Valid':'Expired'}</span></td>`;
+      tb.appendChild(tr);
+    });
+  }catch(e){}
+}
+
+async function generatePassword(){
+  const hours=parseInt(document.getElementById('pwdHours').value)||0;
+  try{
+    const res=await api('/api/admin/review-password',{method:'POST',body:JSON.stringify({validHours:hours})});
+    const d=await res.json();
+    const pwd=d.password;
+    document.getElementById('pwdResult').innerHTML=`
+      <div style="margin-top:16px">
+        <div class="pwd-display">${pwd}</div>
+        <p style="text-align:center;font-size:0.78rem;color:var(--muted);margin-bottom:10px">${hours>0?`Valid for <strong>${hours}h</strong>.`:'No expiry.'} Share with candidates for answer review.</p>
+        <button class="btn btn-secondary" style="width:100%" onclick="navigator.clipboard.writeText('${pwd}').then(()=>toast('Copied to clipboard!'))">📋 Copy Password</button>
+      </div>`;
+    toast('Review password generated'); loadPasswords();
+  }catch(e){toast('Failed to generate','error');}
+}
+
+/* ── AUDIT LOGS ─────────────────────────────────────────────────────────────── */
+async function loadAuditLogs(){
+  try{ allLogs=await api('/api/admin/audit-logs').then(r=>r.json()); renderAudit(allLogs); }catch(e){}
+}
+
+function filterAudit(){
+  const q=document.getElementById('auditSearch').value.toLowerCase();
+  renderAudit(allLogs.filter(l=>(l.action||'').toLowerCase().includes(q)||(l.targetUser||'').toLowerCase().includes(q)||(l.details||'').toLowerCase().includes(q)));
+}
+
+function renderAudit(logs){
+  const tb=document.getElementById('auditTable');
+  if(!logs.length){tb.innerHTML=`<tr><td colspan="5"><div class="empty-state">No log entries.</div></td></tr>`;return;}
+  tb.innerHTML='';
+  logs.forEach(l=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="font-size:0.75rem;font-family:'JetBrains Mono';color:var(--muted);white-space:nowrap">${new Date(l.timestamp).toLocaleString()}</td>
+      <td><span class="badge badge-info">${esc(l.action||'')}</span></td>
+      <td style="font-size:0.81rem">${esc(l.adminUser||'—')}</td>
+      <td style="font-size:0.81rem">${esc(l.targetUser||'—')}</td>
+      <td style="font-size:0.78rem;color:var(--muted);max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(l.details||'')}">${esc(l.details||'—')}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ── SYS INFO ───────────────────────────────────────────────────────────────── */
+async function loadSysInfo(){
+  try{
+    const [db,s]=await Promise.all([api('/api/admin/db-status').then(r=>r.json()),api('/api/admin/settings').then(r=>r.json())]);
+    const live=s.examStatus==='started';
+    document.getElementById('sysInfo').innerHTML=`
+      <div>🗄 DB: <strong style="color:${db.status==='healthy'?'var(--success)':'var(--danger)'}">${db.status}</strong></div>
+      <div>❓ Questions: <strong style="color:var(--text)">${db.questions}</strong></div>
+      <div>👥 Candidates: <strong style="color:var(--text)">${db.candidates}</strong></div>
+      <div>📋 Results: <strong style="color:var(--text)">${db.results}</strong></div>
+      <div>🎮 Exam: <strong style="color:${live?'var(--success)':'var(--danger)'}">${live?'RUNNING':'STOPPED'}</strong></div>
+      <div>⏱ Total Time: <strong style="color:var(--text)">${s.totalTime}s (${Math.floor(s.totalTime/60)}m)</strong></div>
+      <div>❓ Max Q/Candidate: <strong style="color:var(--text)">${s.maxQuestionsPerCandidate}</strong></div>
+      <div>🔀 Shuffle Q: <strong style="color:var(--text)">${s.shuffleQuestions?'Yes':'No'}</strong> · Options: <strong style="color:var(--text)">${s.shuffleOptions?'Yes':'No'}</strong></div>`;
+  }catch(e){document.getElementById('sysInfo').textContent='Could not load.';}
+}
+
+/* ── CLEAR DATA ─────────────────────────────────────────────────────────────── */
+async function clearData(target){
+  const lb={questions:'ALL questions',candidates:'ALL candidates',results:'ALL results',all:'ALL DATA'};
+  if(!confirm(`⚠️ Permanently delete ${lb[target]}? Cannot be undone.`))return;
+  if(target==='all'&&!confirm('Final confirmation: delete ALL data?'))return;
+  try{
+    await api('/api/admin/clear',{method:'POST',body:JSON.stringify({target})});
+    toast(`Cleared: ${lb[target]}`,'info'); loadDashboard();
+  }catch(e){toast('Clear failed','error');}
+}
+
+/* ── TEMPLATES ──────────────────────────────────────────────────────────────── */
+function downloadTemplate(type){
+  const rows=type==='questions'
+    ?[{question:'What is 2+2?',optionA:'3',optionB:'4',optionC:'5',optionD:'6',answer:'B',explanation:'Basic arithmetic.',timeLimit:0}]
+    :[{name:'John Doe',empId:'EMP001',email:'john@company.com'}];
+  const keys=Object.keys(rows[0]);
+  const csv=[keys.join(','),...rows.map(r=>keys.map(k=>`"${r[k]}"`).join(','))].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=type+'_template.csv'; a.click();
+  toast('Template downloaded');
+}
+
+/* ── HELPERS ────────────────────────────────────────────────────────────────── */
+function fmtTime(sec){
+  const m=Math.floor(sec/60),s=sec%60;
+  return `${m}m ${String(s).padStart(2,'0')}s`;
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+function updateExportLinks(){
+  const q=`?adminKey=${encodeURIComponent(adminKey)}`;
+  [['exportQBtn','export-questions'],['exportCBtn','export-candidates'],['exportRBtn','export-results'],['dashExportBtn','export-results']]
+    .forEach(([id,path])=>{ const el=document.getElementById(id); if(el){el.href=`/api/admin/${path}${q}`;el.target='_blank';} });
+}
+
+/* ── BOOT ───────────────────────────────────────────────────────────────────── */
+(async function boot(){
+  if(!adminKey)return;
+  try{
+    const res=await fetch('/api/admin/settings',{headers:{'x-admin-key':adminKey}});
+    if(res.ok){ enterDashboard(); }
+    else{ localStorage.removeItem(KEY_STORE); adminKey=''; setAlert('loginAlert','Session expired — please log in.','info'); }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

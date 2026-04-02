@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: employee-assessment-cbt
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/settings
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_KEY
+        generateValue: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: assessment-db
+          property: connectionString
+
+databases:
+  - name: assessment-db
+    plan: free
+    databaseName: assessment

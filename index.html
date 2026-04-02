@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Assessment Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg2: #111827;
+  --bg3: #1a2236;
+  --card: #141c2e;
+  --border: rgba(99,179,237,0.15);
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --radius: 12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 20% 20%, rgba(59,130,246,0.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%, rgba(6,182,212,0.05) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+/* SCREEN SYSTEM */
+.screen{display:none;position:relative;z-index:1}
+.screen.active{display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:24px 16px}
+
+/* LOGIN */
+#loginScreen{justify-content:center}
+.login-wrap{width:100%;max-width:420px}
+.brand{text-align:center;margin-bottom:40px}
+.brand-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 8px 32px rgba(59,130,246,0.3)}
+.brand h1{font-size:1.8rem;font-weight:700;letter-spacing:-0.5px}
+.brand p{color:var(--muted);font-size:0.9rem;margin-top:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px}
+.field{margin-bottom:20px}
+.field label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px}
+.field input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:0.95rem;font-family:inherit;transition:.2s}
+.field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.15)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border:none;border-radius:8px;font-family:inherit;font-size:0.95rem;font-weight:600;cursor:pointer;transition:.2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;width:100%}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(59,130,246,0.35)}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:0.9rem}
+.alert-error{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#fca5a5}
+.alert-info{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#93c5fd}
+.alert-success{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:#6ee7b7}
+
+/* INSTRUCTIONS */
+#instructionsScreen .card{max-width:600px;width:100%}
+.instr-list{list-style:none;margin:20px 0}
+.instr-list li{padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;font-size:0.93rem;color:var(--muted)}
+.instr-list li::before{content:'→';color:var(--accent);font-family:'Space Mono';flex-shrink:0}
+.candidate-tag{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.avatar{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0}
+
+/* EXAM */
+#examScreen{padding:0}
+.exam-header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px;width:100%;position:sticky;top:0;z-index:100}
+.exam-header h2{font-size:0.95rem;font-weight:600;flex:1}
+.timer-box{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-family:'Space Mono',monospace;font-size:0.9rem}
+.timer-box.warning{border-color:var(--warning);color:var(--warning);animation:pulse 1s infinite}
+.timer-box.danger{border-color:var(--danger);color:var(--danger);animation:pulse 0.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+.exam-body{display:grid;grid-template-columns:1fr 280px;gap:0;width:100%;flex:1;max-height:calc(100vh - 57px);overflow:hidden}
+.exam-main{padding:28px;overflow-y:auto}
+.exam-sidebar{background:var(--card);border-left:1px solid var(--border);padding:20px;overflow-y:auto}
+.q-count{font-size:0.82rem;color:var(--muted);font-family:'Space Mono';margin-bottom:12px}
+.q-number{font-size:1.6rem;font-weight:700;color:var(--accent);margin-bottom:16px;font-family:'Space Mono'}
+.q-text{font-size:1.05rem;line-height:1.7;margin-bottom:28px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.options{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
+.option{display:flex;align-items:center;gap:14px;padding:14px 18px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:.2s;background:var(--bg3)}
+.option:hover{border-color:var(--accent);background:rgba(59,130,246,0.06)}
+.option.selected{border-color:var(--accent);background:rgba(59,130,246,0.1)}
+.option.correct{border-color:var(--success)!important;background:rgba(16,185,129,0.1)!important}
+.option.wrong{border-color:var(--danger)!important;background:rgba(239,68,68,0.1)!important}
+.option.disabled{cursor:default;pointer-events:none}
+.opt-key{width:32px;height:32px;border-radius:6px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:'Space Mono';font-size:0.8rem;font-weight:700;flex-shrink:0}
+.option.selected .opt-key{background:var(--accent);color:#fff}
+.opt-text{font-size:0.95rem}
+.explanation-box{background:var(--bg3);border:1px solid var(--success);border-radius:10px;padding:16px;margin-bottom:24px;font-size:0.9rem;line-height:1.6}
+.explanation-box .label{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--success);margin-bottom:8px}
+.exam-nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn-flag{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:var(--warning)}
+.btn-flag:hover,.btn-flag.flagged{background:rgba(245,158,11,0.2);border-color:var(--warning)}
+
+/* SIDEBAR */
+.sidebar-title{font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px}
+.q-palette{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:20px}
+.q-dot{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-family:'Space Mono';cursor:pointer;transition:.15s;border:2px solid transparent;background:var(--bg3);color:var(--muted)}
+.q-dot:hover{border-color:var(--accent)}
+.q-dot.answered{background:rgba(16,185,129,0.2);color:var(--success);border-color:rgba(16,185,129,0.3)}
+.q-dot.current{border-color:var(--accent);color:var(--accent)}
+.q-dot.flagged{background:rgba(245,158,11,0.15);color:var(--warning);border-color:rgba(245,158,11,0.3)}
+.progress-bar{background:var(--bg3);border-radius:4px;height:6px;margin-bottom:20px}
+.progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:.4s}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--muted)}
+.legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.perq-timer{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;margin-bottom:16px}
+.perq-timer .label{font-size:0.75rem;color:var(--muted);margin-bottom:4px}
+.perq-timer .val{font-size:1.2rem;font-family:'Space Mono';font-weight:700;color:var(--accent2)}
+
+/* RESULT */
+#resultScreen .card{max-width:560px;width:100%}
+.score-big{text-align:center;padding:28px 0}
+.score-circle{width:120px;height:120px;border-radius:50%;border:4px solid var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 16px;background:rgba(59,130,246,0.08)}
+.score-circle .pct{font-size:2rem;font-weight:700;font-family:'Space Mono';color:var(--accent)}
+.score-circle .label{font-size:0.7rem;color:var(--muted)}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.stat-box .val{font-size:1.4rem;font-weight:700;font-family:'Space Mono'}
+.stat-box .label{font-size:0.75rem;color:var(--muted);margin-top:4px}
+
+/* REVIEW */
+#reviewScreen{padding:20px 16px}
+.review-wrap{max-width:760px;width:100%}
+.review-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.review-item .q-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.review-item .badge{padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700}
+.badge-correct{background:rgba(16,185,129,0.15);color:var(--success)}
+.badge-wrong{background:rgba(239,68,68,0.15);color:var(--danger)}
+.badge-skip{background:rgba(100,116,139,0.2);color:var(--muted)}
+.review-item .q-text-s{font-size:0.95rem;line-height:1.6;margin-bottom:14px}
+.answers-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.ans-box{padding:8px 12px;border-radius:7px;font-size:0.82rem}
+.ans-box.your{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2)}
+.ans-box.correct-a{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2)}
+.ans-box span{font-weight:700;font-family:'Space Mono'}
+.expl{font-size:0.85rem;color:var(--muted);border-top:1px solid var(--border);padding-top:12px;line-height:1.6}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:400px;width:90%}
+.modal h3{font-size:1.1rem;font-weight:700;margin-bottom:8px}
+.modal p{color:var(--muted);font-size:0.9rem;margin-bottom:20px;line-height:1.5}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end}
+.tab-alert{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1a1018;border:2px solid var(--danger);border-radius:10px;padding:14px 24px;z-index:2000;text-align:center;font-weight:600;color:#fca5a5;box-shadow:0 8px 32px rgba(0,0,0,0.5);display:none}
+
+/* EXAM STOPPED */
+#stoppedScreen{justify-content:center}
+#stoppedScreen .card{max-width:400px;text-align:center}
+
+@media(max-width:768px){
+  .exam-body{grid-template-columns:1fr;max-height:unset;overflow:visible}
+  .exam-sidebar{display:none}
+  .exam-sidebar.show{display:block;border-left:none;border-top:1px solid var(--border)}
+}
+</style>
+</head>
+<body>
+
+<!-- TAB SWITCH ALERT -->
+<div class="tab-alert" id="tabAlert">⚠️ Tab switch detected! This is being recorded.</div>
+
+<!-- LOGIN SCREEN -->
+<div class="screen active" id="loginScreen">
+  <div class="login-wrap">
+    <div class="brand">
+      <div class="brand-icon">📋</div>
+      <h1>Assessment Portal</h1>
+      <p>Employee Competency Test</p>
+    </div>
+    <div class="card">
+      <div id="loginAlert"></div>
+      <div class="field">
+        <label>Employee ID</label>
+        <input type="text" id="empId" placeholder="Enter your Employee ID" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="email" placeholder="Enter your work email">
+      </div>
+      <button class="btn btn-primary" onclick="handleLogin()">
+        <span id="loginBtnText">Sign In & Continue →</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- EXAM STOPPED -->
+<div class="screen" id="stoppedScreen">
+  <div class="card">
+    <div style="font-size:3rem;margin-bottom:16px">🔒</div>
+    <h2 style="margin-bottom:8px">Exam Not Active</h2>
+    <p style="color:var(--muted);margin-bottom:24px">The exam is currently not available. Please contact your HR administrator or try again later.</p>
+    <button class="btn btn-secondary" onclick="showScreen('loginScreen')">← Back to Login</button>
+  </div>
+</div>
+
+<!-- INSTRUCTIONS SCREEN -->
+<div class="screen" id="instructionsScreen">
+  <div class="card" style="max-width:600px;width:100%">
+    <div class="candidate-tag">
+      <div class="avatar" id="avatarLetter">A</div>
+      <div>
+        <div style="font-weight:600" id="candName">Candidate</div>
+        <div style="font-size:0.82rem;color:var(--muted)" id="candDetails"></div>
+      </div>
+    </div>
+    <h2 style="margin-bottom:6px">Exam Instructions</h2>
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:4px">Please read carefully before proceeding.</p>
+    <ul class="instr-list" id="instrList">
+      <li>This is a one-time exam. You cannot retake it once submitted.</li>
+      <li>Each question must be answered before proceeding to the next.</li>
+      <li>If you close the browser, your progress will be saved and you can resume.</li>
+      <li>Do not switch tabs or windows — this may be recorded and trigger auto-submission.</li>
+      <li>After answering each question, the correct answer and explanation will be shown.</li>
+      <li>The exam will auto-submit when the timer expires.</li>
+      <li id="instrQCount"></li>
+    </ul>
+    <button class="btn btn-primary" onclick="startExam()">Start Exam →</button>
+  </div>
+</div>
+
+<!-- EXAM SCREEN -->
+<div class="screen" id="examScreen">
+  <div class="exam-header">
+    <div class="exam-header" style="position:static;background:none;border:none;padding:0;flex:1">
+      <span style="font-weight:700;font-size:1rem">Assessment</span>
+      <span style="color:var(--muted);font-size:0.85rem;margin-left:8px" id="hdrCandName"></span>
+    </div>
+    <div class="timer-box" id="totalTimer">⏱ 60:00</div>
+    <button class="btn btn-secondary" style="padding:8px 12px;font-size:0.8rem" onclick="toggleSidebar()">📊</button>
+  </div>
+  <div class="exam-body">
+    <!-- MAIN QUESTION AREA -->
+    <div class="exam-main" id="examMain">
+      <div class="q-count" id="qCount">Question 1 of 40</div>
+      <div class="q-number" id="qNumber">Q.01</div>
+      <div class="q-text" id="qText">Loading question...</div>
+      <div id="explanationBox" style="display:none" class="explanation-box">
+        <div class="label">💡 Explanation</div>
+        <div id="explanationText"></div>
+      </div>
+      <div class="options" id="optionsBox"></div>
+      <div class="exam-nav" id="examNav">
+        <button class="btn btn-secondary" id="prevBtn" onclick="navQuestion(-1)">← Prev</button>
+        <button class="btn btn-flag" id="flagBtn" onclick="toggleFlag()">🏁 Flag</button>
+        <button class="btn btn-primary" id="nextBtn" onclick="submitAnswer()">Submit & Next →</button>
+      </div>
+    </div>
+    <!-- SIDEBAR -->
+    <div class="exam-sidebar" id="examSidebar">
+      <div id="perQTimerBox" class="perq-timer" style="display:none">
+        <div class="label">Question Time</div>
+        <div class="val" id="perQTimerVal">—</div>
+      </div>
+      <div class="sidebar-title">Progress</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(16,185,129,0.4)"></div>Answered</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--bg3);border:1px solid var(--border)"></div>Pending</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(245,158,11,0.3)"></div>Flagged</div>
+        <div class="legend-item"><div class="legend-dot" style="border:2px solid var(--accent)"></div>Current</div>
+      </div>
+      <div class="sidebar-title">Questions</div>
+      <div class="q-palette" id="qPalette"></div>
+      <button class="btn btn-danger" style="width:100%;font-size:0.85rem;padding:10px" onclick="confirmSubmit()">
+        🏁 Submit Exam
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div class="screen" id="resultScreen">
+  <div class="card" style="max-width:560px;width:100%">
+    <div class="score-big">
+      <div class="score-circle">
+        <div class="pct" id="resultPct">—%</div>
+        <div class="label">Score</div>
+      </div>
+      <h2 id="resultTitle">Exam Completed</h2>
+      <p style="color:var(--muted);font-size:0.9rem;margin-top:4px" id="resultCandName"></p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="val" id="resScore">—</div><div class="label">Score</div></div>
+      <div class="stat-box"><div class="val" id="resTotal">—</div><div class="label">Total Qs</div></div>
+      <div class="stat-box"><div class="val" id="resTime">—</div><div class="label">Time Taken</div></div>
+      <div class="stat-box"><div class="val" id="resPct">—</div><div class="label">Percentage</div></div>
+    </div>
+    <button class="btn btn-secondary" style="width:100%;margin-bottom:10px" onclick="showReviewPrompt()">
+      🔍 Review My Answers
+    </button>
+    <p style="text-align:center;font-size:0.8rem;color:var(--muted)">Contact HR for any discrepancies.</p>
+  </div>
+</div>
+
+<!-- REVIEW SCREEN -->
+<div class="screen" id="reviewScreen">
+  <div class="review-wrap">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <button class="btn btn-secondary" onclick="showScreen('resultScreen')">← Back</button>
+      <h2>Answer Review</h2>
+      <span id="reviewSummary" style="margin-left:auto;font-size:0.85rem;color:var(--muted)"></span>
+    </div>
+    <div id="reviewList"></div>
+  </div>
+</div>
+
+<!-- REVIEW PASSWORD MODAL -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal">
+    <h3>🔒 Review Password</h3>
+    <p>Enter the 6-digit password provided by your HR administrator to review your answers.</p>
+    <div class="field" style="margin-bottom:16px">
+      <input type="text" id="reviewPwd" placeholder="Enter 6-digit password" maxlength="6" 
+             style="text-align:center;font-family:'Space Mono';font-size:1.3rem;letter-spacing:8px">
+    </div>
+    <div id="reviewPwdAlert"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('reviewModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitReviewPwd()">Unlock →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMIT CONFIRM MODAL -->
+<div class="modal-overlay" id="submitModal">
+  <div class="modal">
+    <h3>Submit Exam?</h3>
+    <p id="submitModalMsg">Are you sure you want to submit the exam? This action cannot be undone. Unanswered questions will be marked as skipped.</p>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('submitModal')">Continue Exam</button>
+      <button class="btn btn-danger" onclick="doSubmitExam()">Submit Now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let state = {
+  candidate: null,
+  resultId: null,
+  questionIds: [],
+  answers: {},
+  flags: {},
+  currentIndex: 0,
+  totalTime: 3600,
+  timeRemaining: 3600,
+  perQTime: 0,
+  perQRemaining: 0,
+  totalTimer: null,
+  perQTimerInterval: null,
+  examStarted: false,
+  tabSwitches: 0,
+  tabSwitchLimit: 3,
+  currentOptions: [],
+  answered: false,
+};
+
+// ─── SCREEN ────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── LOGIN ──────────────────────────────────────────────────────────────────
+async function handleLogin() {
+  const empId = document.getElementById('empId').value.trim();
+  const email = document.getElementById('email').value.trim();
+  if (!empId || !email) { showAlert('loginAlert', 'Please enter both Employee ID and Email.', 'error'); return; }
+
+  document.getElementById('loginBtnText').textContent = 'Checking...';
+  try {
+    const res = await fetch(`${API}/api/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empId, email }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert('loginAlert', data.error || 'Login failed', 'error'); return; }
+
+    state.candidate = data.candidate;
+
+    if (data.status === 'exam-stopped') { showScreen('stoppedScreen'); return; }
+
+    if (data.status === 'completed') {
+      showResultScreen(data.result, data.candidate);
+      return;
+    }
+
+    // New or resume
+    state.resultId = data.resultId;
+    state.questionIds = data.questionIds;
+    state.answers = data.answers || {};
+    state.currentIndex = data.currentQuestion || 0;
+    state.timeRemaining = data.timeRemaining || data.totalTime;
+    state.totalTime = data.totalTime;
+    state.perQTime = data.perQuestionTime || 0;
+
+    if (data.status === 'resume') {
+      showInstructions(true);
+    } else {
+      showInstructions(false);
+    }
+
+  } catch (e) {
+    showAlert('loginAlert', 'Network error. Please try again.', 'error');
+  } finally {
+    document.getElementById('loginBtnText').textContent = 'Sign In & Continue →';
+  }
+}
+
+function showInstructions(isResume) {
+  const c = state.candidate;
+  document.getElementById('candName').textContent = c.name;
+  document.getElementById('candDetails').textContent = `${c.empId} · ${c.email}`;
+  document.getElementById('avatarLetter').textContent = c.name[0].toUpperCase();
+  document.getElementById('hdrCandName').textContent = c.name;
+  document.getElementById('instrQCount').textContent = `This exam has ${state.questionIds.length} question(s). Answer all to complete.`;
+
+  const answeredCount = Object.keys(state.answers).length;
+  if (isResume && answeredCount > 0) {
+    const li = document.createElement('li');
+    li.textContent = `Resuming from question ${state.currentIndex + 1}. You have answered ${answeredCount} question(s).`;
+    li.style.color = '#93c5fd';
+    document.getElementById('instrList').appendChild(li);
+  }
+  showScreen('instructionsScreen');
+}
+
+function startExam() {
+  setupTabDetection();
+  showScreen('examScreen');
+  state.examStarted = true;
+  startTotalTimer();
+  loadQuestion(state.currentIndex);
+}
+
+// ─── EXAM LOGIC ──────────────────────────────────────────────────────────────
+async function loadQuestion(index) {
+  state.currentIndex = index;
+  state.answered = false;
+  state.currentOptions = [];
+  clearInterval(state.perQTimerInterval);
+
+  document.getElementById('explanationBox').style.display = 'none';
+  document.getElementById('optionsBox').innerHTML = '<div style="color:var(--muted);padding:20px">Loading...</div>';
+  document.getElementById('nextBtn').textContent = 'Submit & Next →';
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('prevBtn').disabled = index === 0;
+
+  try {
+    const res = await fetch(`${API}/api/question/${state.resultId}/${index}`);
+    const q = await res.json();
+    if (!res.ok) { return; }
+
+    document.getElementById('qCount').textContent = `Question ${index + 1} of ${state.questionIds.length}`;
+    document.getElementById('qNumber').textContent = `Q.${String(index + 1).padStart(2, '0')}`;
+    document.getElementById('qText').textContent = q.question;
+
+    state.currentOptions = q.options;
+
+    // Check if already answered
+    const existing = state.answers[index];
+    const isAlreadyAnswered = !!existing;
+
+    renderOptions(q.options, existing?.selected, isAlreadyAnswered, existing?.correct);
+
+    if (isAlreadyAnswered) {
+      state.answered = true;
+      showExplanation(index);
+    }
+
+    // Per-question timer
+    if (state.perQTime > 0 && !isAlreadyAnswered) {
+      state.perQRemaining = q.timeLimit > 0 ? q.timeLimit : state.perQTime;
+      document.getElementById('perQTimerBox').style.display = 'block';
+      startPerQTimer();
+    } else {
+      document.getElementById('perQTimerBox').style.display = 'none';
+    }
+
+    updateFlagBtn();
+    updatePalette();
+    updateProgress();
+
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function renderOptions(options, selected, disabled, correctAnswer) {
+  const box = document.getElementById('optionsBox');
+  box.innerHTML = '';
+  options.forEach(opt => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    if (selected === opt.key) div.classList.add('selected');
+    if (disabled) {
+      div.classList.add('disabled');
+      if (opt.key === correctAnswer) div.classList.add('correct');
+      else if (opt.key === selected && selected !== correctAnswer) div.classList.add('wrong');
+    }
+    div.innerHTML = `<div class="opt-key">${opt.key}</div><div class="opt-text">${opt.text}</div>`;
+    if (!disabled) div.onclick = () => selectOption(opt.key);
+    box.appendChild(div);
+  });
+}
+
+function selectOption(key) {
+  if (state.answered) return;
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  const opts = document.querySelectorAll('.option');
+  const idx = state.currentOptions.findIndex(o => o.key === key);
+  if (idx >= 0) opts[idx].classList.add('selected');
+  state.selectedOption = key;
+}
+
+async function submitAnswer() {
+  if (state.answered) { navQuestion(1); return; }
+
+  const selected = state.selectedOption;
+  if (!selected) {
+    // Navigate without answering (skip)
+    navQuestion(1);
+    return;
+  }
+
+  clearInterval(state.perQTimerInterval);
+  document.getElementById('nextBtn').disabled = true;
+
+  try {
+    const res = await fetch(`${API}/api/answer`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resultId: state.resultId,
+        questionIndex: state.currentIndex,
+        selectedOption: selected,
+        timeSpent: state.perQTime > 0 ? (state.perQTime - state.perQRemaining) : 0,
+      }),
+    });
+    const data = await res.json();
+
+    state.answers[state.currentIndex] = {
+      selected,
+      correct: data.correctAnswer,
+      isCorrect: data.isCorrect,
+    };
+    state.answered = true;
+
+    // Show correct/wrong
+    const opts = document.querySelectorAll('.option');
+    state.currentOptions.forEach((opt, i) => {
+      opts[i].classList.add('disabled');
+      if (opt.key === data.correctAnswer) opts[i].classList.add('correct');
+      else if (opt.key === selected && !data.isCorrect) opts[i].classList.add('wrong');
+    });
+
+    // Show explanation
+    if (data.explanation) {
+      document.getElementById('explanationText').textContent = data.explanation;
+      document.getElementById('explanationBox').style.display = 'block';
+    }
+
+    document.getElementById('nextBtn').textContent =
+      state.currentIndex < state.questionIds.length - 1 ? 'Next Question →' : 'Finish Exam';
+    document.getElementById('nextBtn').disabled = false;
+    updatePalette();
+
+  } catch (e) {
+    document.getElementById('nextBtn').disabled = false;
+  }
+}
+
+async function showExplanation(index) {
+  const a = state.answers[index];
+  if (!a) return;
+  try {
+    // We don't re-fetch explanation; we store it in answers if available
+    if (a.explanation) {
+      document.getElementById('explanationText').textContent = a.explanation;
+      document.getElementById('explanationBox').style.display = 'block';
+    }
+  } catch (e) {}
+}
+
+function navQuestion(dir) {
+  const next = state.currentIndex + dir;
+  if (next < 0 || next >= state.questionIds.length) {
+    if (dir > 0 && state.currentIndex === state.questionIds.length - 1) confirmSubmit();
+    return;
+  }
+  state.selectedOption = null;
+  loadQuestion(next);
+}
+
+function jumpToQuestion(idx) {
+  state.selectedOption = null;
+  loadQuestion(idx);
+}
+
+// ─── TIMERS ──────────────────────────────────────────────────────────────────
+function startTotalTimer() {
+  clearInterval(state.totalTimer);
+  state.totalTimer = setInterval(async () => {
+    state.timeRemaining--;
+    updateTotalTimerDisplay();
+
+    // Save every 10s
+    if (state.timeRemaining % 10 === 0) {
+      await fetch(`${API}/api/save-timer`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resultId: state.resultId, timeRemaining: state.timeRemaining, tabSwitches: state.tabSwitches }),
+      });
+    }
+
+    if (state.timeRemaining <= 0) {
+      clearInterval(state.totalTimer);
+      doSubmitExam(true);
+    }
+  }, 1000);
+}
+
+function updateTotalTimerDisplay() {
+  const m = Math.floor(state.timeRemaining / 60);
+  const s = state.timeRemaining % 60;
+  const el = document.getElementById('totalTimer');
+  el.textContent = `⏱ ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.className = 'timer-box';
+  if (state.timeRemaining <= 60) el.classList.add('danger');
+  else if (state.timeRemaining <= 300) el.classList.add('warning');
+}
+
+function startPerQTimer() {
+  clearInterval(state.perQTimerInterval);
+  state.perQTimerInterval = setInterval(() => {
+    state.perQRemaining--;
+    const el = document.getElementById('perQTimerVal');
+    el.textContent = state.perQRemaining + 's';
+    el.style.color = state.perQRemaining <= 5 ? 'var(--danger)' : 'var(--accent2)';
+    if (state.perQRemaining <= 0) {
+      clearInterval(state.perQTimerInterval);
+      submitAnswer();
+    }
+  }, 1000);
+}
+
+// ─── PALETTE & PROGRESS ─────────────────────────────────────────────────────
+function updatePalette() {
+  const box = document.getElementById('qPalette');
+  box.innerHTML = '';
+  for (let i = 0; i < state.questionIds.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'q-dot';
+    d.textContent = i + 1;
+    if (state.answers[i]) d.classList.add('answered');
+    if (state.flags[i]) d.classList.add('flagged');
+    if (i === state.currentIndex) d.classList.add('current');
+    d.onclick = () => jumpToQuestion(i);
+    box.appendChild(d);
+  }
+}
+
+function updateProgress() {
+  const answered = Object.keys(state.answers).length;
+  const total = state.questionIds.length;
+  document.getElementById('progressFill').style.width = `${(answered / total) * 100}%`;
+}
+
+function toggleFlag() {
+  state.flags[state.currentIndex] = !state.flags[state.currentIndex];
+  updateFlagBtn();
+  updatePalette();
+}
+
+function updateFlagBtn() {
+  const btn = document.getElementById('flagBtn');
+  btn.className = 'btn btn-flag' + (state.flags[state.currentIndex] ? ' flagged' : '');
+  btn.textContent = state.flags[state.currentIndex] ? '🏁 Flagged' : '🏁 Flag';
+}
+
+function toggleSidebar() {
+  document.getElementById('examSidebar').classList.toggle('show');
+}
+
+// ─── SUBMIT ──────────────────────────────────────────────────────────────────
+function confirmSubmit() {
+  const unanswered = state.questionIds.length - Object.keys(state.answers).length;
+  const msg = unanswered > 0
+    ? `You have ${unanswered} unanswered question(s). Unanswered questions will be marked as incorrect.`
+    : 'You have answered all questions. Ready to submit?';
+  document.getElementById('submitModalMsg').textContent = msg;
+  document.getElementById('submitModal').classList.add('open');
+}
+
+async function doSubmitExam(auto = false) {
+  closeModal('submitModal');
+  clearInterval(state.totalTimer);
+  clearInterval(state.perQTimerInterval);
+
+  try {
+    const timeTaken = state.totalTime - state.timeRemaining;
+    const res = await fetch(`${API}/api/submit`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resultId: state.resultId, timeTaken }),
+    });
+    const data = await res.json();
+    showResultScreen({ score: data.score, percentage: data.percentage, totalQuestions: data.total, timeTaken }, state.candidate);
+  } catch (e) {
+    alert('Submission failed. Please contact HR.');
+  }
+}
+
+// ─── RESULT ───────────────────────────────────────────────────────────────────
+function showResultScreen(result, candidate) {
+  state.candidate = candidate || state.candidate;
+  const pct = parseFloat(result.percentage).toFixed(1);
+  document.getElementById('resultPct').textContent = pct + '%';
+  document.getElementById('resultCandName').textContent = candidate ? `${candidate.name} · ${candidate.empId}` : '';
+  document.getElementById('resScore').textContent = result.score;
+  document.getElementById('resTotal').textContent = result.totalQuestions || '—';
+  document.getElementById('resTime').textContent = fmtTime(result.timeTaken || 0);
+  document.getElementById('resPct').textContent = pct + '%';
+
+  const pctNum = parseFloat(pct);
+  let title = pctNum >= 80 ? '🎉 Excellent!' : pctNum >= 60 ? '👍 Good Effort' : '📚 Needs Improvement';
+  document.getElementById('resultTitle').textContent = title;
+
+  showScreen('resultScreen');
+}
+
+function fmtTime(sec) {
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return `${m}m ${s}s`;
+}
+
+// ─── REVIEW ───────────────────────────────────────────────────────────────────
+function showReviewPrompt() {
+  document.getElementById('reviewPwd').value = '';
+  document.getElementById('reviewPwdAlert').innerHTML = '';
+  document.getElementById('reviewModal').classList.add('open');
+}
+
+async function submitReviewPwd() {
+  const pwd = document.getElementById('reviewPwd').value.trim();
+  if (!pwd) return;
+  try {
+    const res = await fetch(`${API}/api/review`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empId: state.candidate.empId, email: state.candidate.email, password: pwd }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('reviewPwdAlert').innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+      return;
+    }
+    closeModal('reviewModal');
+    renderReview(data);
+  } catch (e) {
+    document.getElementById('reviewPwdAlert').innerHTML = `<div class="alert alert-error">Network error</div>`;
+  }
+}
+
+function renderReview(data) {
+  const correct = data.review.filter(r => r.isCorrect).length;
+  document.getElementById('reviewSummary').textContent = `${correct}/${data.review.length} correct`;
+  const list = document.getElementById('reviewList');
+  list.innerHTML = '';
+  data.review.forEach(item => {
+    const isSkipped = item.selectedAnswer === 'Not answered';
+    const div = document.createElement('div');
+    div.className = 'review-item';
+    div.innerHTML = `
+      <div class="q-header">
+        <span style="font-family:'Space Mono';font-size:0.8rem;color:var(--muted)">Q.${item.index}</span>
+        <span class="badge ${isSkipped ? 'badge-skip' : item.isCorrect ? 'badge-correct' : 'badge-wrong'}">
+          ${isSkipped ? 'SKIPPED' : item.isCorrect ? '✓ CORRECT' : '✗ WRONG'}
+        </span>
+      </div>
+      <div class="q-text-s">${item.question}</div>
+      <div class="answers-row">
+        <div class="ans-box your">Your Answer: <span>${item.selectedAnswer}</span></div>
+        <div class="ans-box correct-a">Correct: <span>${item.correctAnswer}</span></div>
+      </div>
+      ${item.explanation ? `<div class="expl"><strong>Explanation:</strong> ${item.explanation}</div>` : ''}
+    `;
+    list.appendChild(div);
+  });
+  showScreen('reviewScreen');
+}
+
+// ─── TAB DETECTION ───────────────────────────────────────────────────────────
+function setupTabDetection() {
+  document.addEventListener('visibilitychange', async () => {
+    if (document.hidden && state.examStarted && !state.submitted) {
+      state.tabSwitches++;
+      showTabAlert();
+      try {
+        const res = await fetch(`${API}/api/tab-switch`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ resultId: state.resultId }),
+        });
+        const d = await res.json();
+        if (d.autoSubmit) { doSubmitExam(true); }
+      } catch (e) {}
+    }
+  });
+}
+
+function showTabAlert() {
+  const el = document.getElementById('tabAlert');
+  el.style.display = 'block';
+  el.textContent = `⚠️ Tab switch #${state.tabSwitches} detected! Too many switches will auto-submit.`;
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function showAlert(id, msg, type) {
+  document.getElementById(id).innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Enter key on login
+document.getElementById('email').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleLogin();
+});
+</script>
+</body>
+</html>
