@@ -769,17 +769,38 @@ app.post('/api/admin/change-key', async (req, res) => {
   res.json({ ok: true });
 });
 
-// ─── START ────────────────────────────────────────────────────────────────────
+// ─── HEALTH CHECK (no DB dependency — Railway uses this) ─────────────────────
+let dbReady = false;
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', db: dbReady ? 'connected' : 'connecting' });
+});
+
+// ─── START — listen FIRST, then connect DB with retries ──────────────────────
 const PORT = process.env.PORT || 3000;
 
-initDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`\n🚀 Server running on port ${PORT}`);
-      console.log(`🔑 Admin Key : ${ADMIN_KEY_LIVE}`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ DB init failed:', err.message);
-    process.exit(1);
-  });
+app.listen(PORT, () => {
+  console.log(`\n🚀 Server listening on port ${PORT}`);
+  console.log(`🔑 Admin Key : ${ADMIN_KEY_LIVE}`);
+  if (!process.env.DATABASE_URL) {
+    console.error('❌ DATABASE_URL is not set! Go to Railway → your project → add a PostgreSQL database, then link it to this service.');
+  }
+  connectWithRetry();
+});
+
+async function connectWithRetry(attempts = 0) {
+  const MAX = 10;
+  try {
+    await initDB();
+    dbReady = true;
+    console.log('✅ Database ready');
+  } catch (err) {
+    console.error(`⚠️  DB connection attempt ${attempts + 1}/${MAX} failed: ${err.message}`);
+    if (attempts < MAX) {
+      const delay = Math.min(5000 * (attempts + 1), 30000); // backoff up to 30s
+      console.log(`   Retrying in ${delay / 1000}s…`);
+      setTimeout(() => connectWithRetry(attempts + 1), delay);
+    } else {
+      console.error('❌ Could not connect to DB after maximum retries. Check DATABASE_URL.');
+    }
+  }
+}
