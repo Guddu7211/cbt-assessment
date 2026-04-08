@@ -534,28 +534,63 @@ function esc(s) {
 /* ── AUTH ───────────────────────────────────────────────────────────────────── */
 async function adminLogin() {
   const key = document.getElementById('adminKeyInput').value.trim();
-  if (!key) { setAlert('loginAlert','Please enter the admin key.','error'); return; }
-  const btn = document.getElementById('loginBtn');
-  btn.textContent = 'Verifying…'; btn.disabled = true;
-  try {
-    fetch('https://saifko.up.railway.app/api/admin/settings', {
-  headers: {
-    'x-admin-key': key
+
+  if (!key) {
+    setAlert('loginAlert', 'Please enter the admin key.', 'error');
+    return;
   }
-});
-      setAlert('loginAlert', '❌ Invalid key. Default is <strong>admin123</strong> — or check the <code>ADMIN_KEY</code> env var in server.js.', 'error');
-      btn.textContent = 'Access Dashboard →'; btn.disabled = false;
+
+  const btn = document.getElementById('loginBtn');
+  btn.textContent = 'Verifying…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('https://saifko.up.railway.app/api/admin/settings', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-key': key
+      }
+    });
+
+    if (!res.ok) {
+      const errText = await res.text(); // 👈 DEBUG
+      console.error("Login Error:", errText);
+
+      setAlert(
+        'loginAlert',
+        '❌ Invalid key or server issue. Default is <strong>admin123</strong>.',
+        'error'
+      );
+
+      btn.textContent = 'Access Dashboard →';
+      btn.disabled = false;
       return;
     }
+
+    // ✅ SUCCESS
     adminKey = key;
     localStorage.setItem(KEY_STORE, key);
-    enterDashboard();
+
+    setAlert('loginAlert', '✅ Login successful!', 'success');
+
+    setTimeout(() => {
+      enterDashboard();
+    }, 500);
+
   } catch (e) {
-    setAlert('loginAlert', '⚠️ Cannot reach server. Make sure <strong>server.js</strong> is running on port 3000.', 'error');
-    btn.textContent = 'Access Dashboard →'; btn.disabled = false;
+    console.error("Network Error:", e);
+
+    setAlert(
+      'loginAlert',
+      '⚠️ Cannot reach server. Check internet or backend URL.',
+      'error'
+    );
+
+    btn.textContent = 'Access Dashboard →';
+    btn.disabled = false;
   }
 }
-
 function enterDashboard() {
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('mainContent').style.display = 'block';
