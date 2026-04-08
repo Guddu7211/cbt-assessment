@@ -421,8 +421,15 @@ app.get('/api/settings', async (req, res) => {
 
 // GET SETTINGS
 app.get('/api/admin/settings', adminAuth, async (req, res) => {
-  try { res.json(toRow(await query(`SELECT * FROM exam_settings WHERE id=1`)) || {}); }
-  catch (err) { res.status(500).json({ error: err.message }); }
+  try {
+    res.json({
+      ok: true,
+      key: ADMIN_KEY_LIVE
+    });
+  } catch (err) {
+    console.error("SETTINGS ERROR:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 // UPDATE SETTINGS
