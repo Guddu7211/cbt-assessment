@@ -154,8 +154,16 @@ function toRow(res)  { return res.rows[0]; }
 let ADMIN_KEY_LIVE = process.env.ADMIN_KEY || 'admin123';
 
 function adminAuth(req, res, next) {
-  const key = req.headers['x-admin-key'] || req.query.adminKey;
-  if (key !== ADMIN_KEY_LIVE) return res.status(401).json({ error: 'Unauthorized' });
+  const key =
+    req.headers['x-admin-key'] ||
+    req.query.adminKey ||
+    req.body?.adminKey;  // ✅ ADD THIS
+
+  if (!key) return res.status(401).json({ error: 'Admin key required' });
+
+  if (key !== ADMIN_KEY_LIVE)
+    return res.status(401).json({ error: 'Invalid admin key' });
+
   next();
 }
 
@@ -759,7 +767,7 @@ app.get('/api/admin/db-status', adminAuth, async (req, res) => {
 });
 
 // CHANGE ADMIN KEY
-app.post('/api/admin/change-key', async (req, res) => {
+app.post('/api/admin/change-key', adminAuth, async (req, res) => {
   const current = req.headers['x-admin-key'];
   if (current !== ADMIN_KEY_LIVE) return res.status(401).json({ error: 'Current admin key is incorrect.' });
   const { newKey } = req.body;
